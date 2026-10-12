@@ -135,11 +135,14 @@ class LiteRtLmLocalLlm(
     beforeLoad()
     // NPU files are SoC-specific and only run on Backend.NPU. Portable files use the GPU switch.
     // Vision uses the same backend as text so the whole request stays on one accelerator.
+    // CPU thread count is capped at 4: XNNPack scales well to 4 threads on phones, and more
+    // threads mostly add contention with TalkBack's own event handling on the same cores.
+    val cpuThreads = minOf(4, Runtime.getRuntime().availableProcessors().coerceAtLeast(1))
     val backend =
       when {
         useNpu -> Backend.NPU(nativeLibraryDir)
         useGpu -> Backend.GPU()
-        else -> Backend.CPU()
+        else -> Backend.CPU(threadCount = cpuThreads)
       }
     val config =
       EngineConfig(

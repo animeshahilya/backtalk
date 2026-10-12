@@ -34,6 +34,9 @@ object OnDeviceAiSettings {
   /** Android reports a little less RAM than the phone's label says, so allow for that. */
   private const val RAM_SLACK = 0.85
 
+  /** Fraction of the file size an NPU model needs as free CPU memory (see [hasFreeMemoryForModel]). */
+  private const val NPU_MEMORY_FACTOR = 0.6
+
   fun isOnDevice(prefs: SharedPreferences): Boolean =
     prefs.getString(PREF_PROVIDER, PROVIDER_CLOUD) == PROVIDER_DEVICE
 
@@ -61,6 +64,19 @@ object OnDeviceAiSettings {
    */
   fun hasFreeMemoryFor(modelBytes: Long, availableBytes: Long, lowMemory: Boolean): Boolean =
     !lowMemory && availableBytes >= modelBytes
+
+  /**
+   * Same as [hasFreeMemoryFor] but for a known [model]. NPU weights stay on Hexagon SRAM and the
+   * CPU footprint is close to the GPU one (model card: GPU 676 MB vs CPU 1733 MB for E2B), so the
+   * required free memory is scaled to 60%%. Without this, NPU phones fail the check even though
+   * the load would succeed.
+   */
+  fun hasFreeMemoryForModel(model: LocalModel, availableBytes: Long, lowMemory: Boolean): Boolean {
+    if (lowMemory) return false
+    val required =
+      if (model.requiresNpu) (model.sizeBytes * NPU_MEMORY_FACTOR).toLong() else model.sizeBytes
+    return availableBytes >= required
+  }
 
   /**
    * The models to offer on a phone with [totalRamBytes] of RAM: the ones that fit, and any that

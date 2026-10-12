@@ -71,7 +71,10 @@ data class LocalModel(
       sha256 = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
       minTotalRamGib = 6,
       note = "Recommended. Best answers for its size.",
-      maxTokens = 6144,
+      // Prompt is ~2k tokens (instructions + compact nodes + vision) and answers are a few
+      // hundred tokens. 4096 leaves headroom while keeping the KV cache a third smaller than
+      // 6144, which loads faster and survives better on 6 GB phones.
+      maxTokens = 4096,
     ),
     LocalModel(
       id = "e4b",
@@ -99,7 +102,9 @@ data class LocalModel(
       sha256 = "41dd675fbe735b6029012b5576a5716bac614fd8156de0128db4c9dff3cebd4e",
       minTotalRamGib = 6,
       note = "Fastest on Snapdragon 8 Elite. Runs on the NPU, uses less battery.",
-      maxTokens = 6144,
+      // Same prompt budget as portable E2B; see above. NPU KV cache is on-device SRAM, so the
+      // saving matters even more here.
+      maxTokens = 4096,
       socModel = "sm8750",
       requiresNpu = true,
     ),
@@ -113,7 +118,8 @@ data class LocalModel(
       sha256 = "ebc103e548e76a34b8114a1dc1dd6d33a893c38add108d8bae8165b51f320f02",
       minTotalRamGib = 6,
       note = "Fastest on QCS8275. Runs on the NPU, uses less battery.",
-      maxTokens = 6144,
+      // Same prompt budget as portable E2B; see above.
+      maxTokens = 4096,
       socModel = "qcs8275",
       requiresNpu = true,
     ),
